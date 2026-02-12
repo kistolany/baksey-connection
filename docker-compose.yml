@@ -1,0 +1,160 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: baksey-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - ./docker/postgres/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  redis:
+    image: redis:alpine
+    container_name: baksey-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  # MinIo for file storage
+  minio:
+    image: minio/minio
+    container_name: baksey-storage
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - app-network
+
+  # Product service
+  product-service:
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile
+    container_name: product-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/baksey_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      INVENTORY_BASE_URL: http://inventory-service:8081/api/v1/inventories
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      MINIO_URL: http://minio:9000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app-network
+
+  # Inventory service
+  inventory-service:
+    build:
+      context: .
+      dockerfile: inventory_service/Dockerfile
+    container_name: inventory-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_service
+      SPRING_DATASOURCE_USERNAME: inventory_user
+      SPRING_DATASOURCE_PASSWORD: inventory@3142
+      PRODUCT_BASE_URL: http://product-service:8080/api/v1/products
+      SPRING_REDIS_HOST: redis
+      MINIO_URL: http://minio:9000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+    networks:
+      - app-network
+
+  # Order service
+  order-service:
+    build:
+      context: .
+      dockerfile: order_service/Dockerfile
+    container_name: order-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      PRODUCT_BASE_URL: http://product-service:8080/api/v1/products
+      INVENTORY_BASE_URL: http://inventory-service:8081/api/v1/inventories
+      # FIX: Corrected port and service name
+      ADDRESS_BASE_URL: http://address-service:8084/api/v1/addresses
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Address service
+  address_service:
+    build:
+      context: .
+      dockerfile: address_service/Dockerfile
+    container_name: address-service
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/address_service
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+  # Cart service
+  shopping-cart-service:
+    build:
+      context: .
+      dockerfile: shopping_cart_service/Dockerfile
+    container_name: shopping-cart-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/shopping_cart_service
+      SPRING_DATASOURCE_USERNAME: postgresdb
+      SPRING_DATASOURCE_PASSWORD: postgres
+      PRODUCT_BASE_URL: http://product-service:8080/api/v1/products
+      INVENTORY_BASE_URL: http://inventory-service:8081/api/v1/inventories
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  minio_data:
+
+networks:
+  app-network:
+    driver: bridge
