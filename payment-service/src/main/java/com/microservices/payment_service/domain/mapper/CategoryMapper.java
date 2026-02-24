@@ -1,16 +1,12 @@
-package com.microservices.product_service.domain.mapper;
-
-import java.util.List;
-
-import org.mapstruct.Mapper;
+package com.microservices.payment_service.domain.mapper;
 
 import com.microservices.product_service.application.request.CategoryRequest;
 import com.microservices.product_service.application.response.CategoryResponse;
 import com.microservices.product_service.domain.model.CategoryModel;
 import com.microservices.product_service.domain.service.BrandService;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.springframework.web.multipart.MultipartFile;
+import org.mapstruct.Mapper;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {BrandService.class})
 public interface CategoryMapper {

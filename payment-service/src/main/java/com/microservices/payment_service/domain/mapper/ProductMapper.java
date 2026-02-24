@@ -1,15 +1,11 @@
-package com.microservices.product_service.domain.mapper;
-
-import java.util.List;
-
-import org.mapstruct.Mapper;
+package com.microservices.payment_service.domain.mapper;
 
 import com.microservices.product_service.application.request.ProductRequest;
 import com.microservices.product_service.application.response.ProductResponse;
 import com.microservices.product_service.domain.model.ProductModel;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.springframework.web.multipart.MultipartFile;
+import org.mapstruct.Mapper;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ProductMapper {

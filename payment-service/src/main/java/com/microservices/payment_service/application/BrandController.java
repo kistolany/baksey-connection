@@ -1,4 +1,4 @@
-package com.microservices.product_service.application;
+package com.microservices.payment_service.application;
 
 import com.microservices.common_service.domain.ResponseModel;
 import com.microservices.common_service.utils.CommonUtils;
@@ -7,12 +7,13 @@ import com.microservices.product_service.application.response.BrandResponse;
 import com.microservices.product_service.domain.service.BrandService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import java.util.List;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @AllArgsConstructor

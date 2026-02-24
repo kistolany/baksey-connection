@@ -1,4 +1,4 @@
-package com.microservices.product_service.domain.outbound.rest;
+package com.microservices.payment_service.domain.outbound.rest;
 
 
 import com.microservices.common_service.domain.ResponseModel;

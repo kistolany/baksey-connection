@@ -1,8 +1,12 @@
-package com.microservices.product_service.infrastructure.repository.entity;
+package com.microservices.payment_service.infrastructure.repository.entity;
 
 import com.microservices.common_service.helpers.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @AllArgsConstructor

@@ -1,11 +1,9 @@
-package com.microservices.product_service.infrastructure.repository.impl;
+package com.microservices.payment_service.infrastructure.repository.impl;
 
-import com.microservices.common_service.domain.PageResponse;
-import com.microservices.product_service.domain.model.CategoryModel;
 import com.microservices.product_service.domain.db_repo.CategoryDomainRepo;
+import com.microservices.product_service.domain.model.CategoryModel;
 import com.microservices.product_service.infrastructure.repository.CategoryRepository;
 import com.microservices.product_service.infrastructure.repository.entity.CategoryEntity;
-import com.microservices.product_service.infrastructure.repository.entity.ProductEntity;
 import com.microservices.product_service.infrastructure.repository.repoMapper.CategoryRepoMapper;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -13,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

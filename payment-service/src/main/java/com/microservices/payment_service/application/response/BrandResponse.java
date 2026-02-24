@@ -1,4 +1,4 @@
-package com.microservices.product_service.application.response;
+package com.microservices.payment_service.application.response;
 
 import lombok.Builder;
 import lombok.Data;

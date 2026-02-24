@@ -1,4 +1,4 @@
-package com.microservices.product_service.domain.outbound.response;
+package com.microservices.payment_service.domain.outbound.response;
 
 import lombok.Data;
 

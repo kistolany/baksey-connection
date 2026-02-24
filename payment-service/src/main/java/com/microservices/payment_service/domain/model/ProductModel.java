@@ -1,4 +1,4 @@
-package com.microservices.product_service.domain.model;
+package com.microservices.payment_service.domain.model;
 
 import lombok.Builder;
 import lombok.Data;

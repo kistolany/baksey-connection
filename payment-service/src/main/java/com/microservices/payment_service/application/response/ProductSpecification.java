@@ -1,18 +1,19 @@
-package com.microservices.product_service.application.response;
+package com.microservices.payment_service.application.response;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
 import com.microservices.product_service.application.request.ProductSearchRequest;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
-import org.springframework.data.jpa.domain.Specification;
 import com.microservices.product_service.infrastructure.repository.entity.ProductEntity;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 public record ProductSpecification(ProductSearchRequest productFilter) implements Specification<ProductEntity> {
     @Override

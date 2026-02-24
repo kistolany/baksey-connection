@@ -1,8 +1,4 @@
-package com.microservices.product_service.domain.service;
-
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+package com.microservices.payment_service.domain.service;
 
 import com.microservices.common_service.domain.PageRequest;
 import com.microservices.common_service.domain.PageResponse;
@@ -10,6 +6,9 @@ import com.microservices.common_service.domain.ResponseModel;
 import com.microservices.product_service.application.request.CategoryRequest;
 import com.microservices.product_service.application.response.CategoryResponse;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.UUID;
 
 public interface CategoryService {
 

@@ -1,4 +1,4 @@
-package com.microservices.product_service.application.request;
+package com.microservices.payment_service.application.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

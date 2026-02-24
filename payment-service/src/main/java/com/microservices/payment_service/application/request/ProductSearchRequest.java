@@ -1,6 +1,5 @@
-package com.microservices.product_service.application.request;
+package com.microservices.payment_service.application.request;
 
-import com.microservices.product_service.infrastructure.repository.entity.CategoryEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

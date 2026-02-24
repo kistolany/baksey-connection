@@ -1,13 +1,13 @@
-package com.microservices.product_service.infrastructure.repository.impl;
+package com.microservices.payment_service.infrastructure.repository.impl;
 
-import com.microservices.product_service.domain.model.BrandModel;
 import com.microservices.product_service.domain.db_repo.BrandDomainRepo;
+import com.microservices.product_service.domain.model.BrandModel;
 import com.microservices.product_service.infrastructure.repository.BrandRepository;
 import com.microservices.product_service.infrastructure.repository.entity.BrandEntity;
-import com.microservices.product_service.infrastructure.repository.entity.CategoryEntity;
 import com.microservices.product_service.infrastructure.repository.repoMapper.BrandRepoMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

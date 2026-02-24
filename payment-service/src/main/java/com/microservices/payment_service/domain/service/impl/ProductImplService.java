@@ -1,34 +1,39 @@
-package com.microservices.product_service.domain.service.impl;
+package com.microservices.payment_service.domain.service.impl;
 
 import com.microservices.common_service.constants.ResponseConstants;
-import com.microservices.common_service.domain.*;
+import com.microservices.common_service.domain.PageRequest;
+import com.microservices.common_service.domain.PageResponse;
 import com.microservices.common_service.domain.ResponseModel;
 import com.microservices.common_service.exception.ApiException;
 import com.microservices.common_service.utils.CommonUtils;
 import com.microservices.product_service.application.request.ProductRequest;
+import com.microservices.product_service.application.request.ProductSearchRequest;
+import com.microservices.product_service.application.response.ProductResponse;
 import com.microservices.product_service.application.response.ProductSpecification;
 import com.microservices.product_service.domain.db_repo.BrandDomainRepo;
 import com.microservices.product_service.domain.db_repo.CategoryDomainRepo;
-import com.microservices.product_service.domain.outbound.feignclient.AttachmentClient;
-import com.microservices.product_service.domain.outbound.request.InventoryRequest;
-import com.microservices.product_service.domain.outbound.response.InventoryResponse;
-import com.microservices.product_service.application.response.ProductResponse;
-import com.microservices.product_service.domain.outbound.feignclient.InventoryFeignClient;
+import com.microservices.product_service.domain.db_repo.ProductDomainRepo;
 import com.microservices.product_service.domain.mapper.ProductMapper;
 import com.microservices.product_service.domain.model.ProductModel;
-import com.microservices.product_service.domain.db_repo.ProductDomainRepo;
+import com.microservices.product_service.domain.outbound.feignclient.AttachmentClient;
+import com.microservices.product_service.domain.outbound.feignclient.InventoryFeignClient;
+import com.microservices.product_service.domain.outbound.request.InventoryRequest;
+import com.microservices.product_service.domain.outbound.response.InventoryResponse;
 import com.microservices.product_service.domain.service.CategoryService;
 import com.microservices.product_service.domain.service.ProductService;
-import com.microservices.product_service.application.request.ProductSearchRequest;
 import com.microservices.product_service.infrastructure.repository.ProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import java.util.*;
-import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @AllArgsConstructor

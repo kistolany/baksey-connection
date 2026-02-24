@@ -1,10 +1,8 @@
-package com.microservices.product_service.infrastructure.repository;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+package com.microservices.payment_service.infrastructure.repository;
 
 import com.microservices.product_service.infrastructure.repository.entity.BrandEntity;
-import com.microservices.product_service.infrastructure.repository.entity.ProductEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 

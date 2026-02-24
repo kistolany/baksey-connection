@@ -1,9 +1,9 @@
-package com.microservices.product_service.application.request;
+package com.microservices.payment_service.application.request;
 
-import java.util.UUID;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
+
+import java.util.UUID;
 
 @Data
 public class CategoryRequest {

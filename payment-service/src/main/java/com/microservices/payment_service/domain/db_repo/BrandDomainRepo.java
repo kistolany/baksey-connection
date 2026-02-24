@@ -1,4 +1,4 @@
-package com.microservices.product_service.domain.db_repo;
+package com.microservices.payment_service.domain.db_repo;
 
 import com.microservices.product_service.domain.model.BrandModel;
 

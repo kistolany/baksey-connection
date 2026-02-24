@@ -1,13 +1,12 @@
-package com.microservices.product_service.domain.outbound.feignclient;
+package com.microservices.payment_service.domain.outbound.feignclient;
 
 import com.microservices.common_service.domain.ResponseModel;
 import com.microservices.product_service.domain.outbound.request.InventoryRequest;
 import com.microservices.product_service.domain.outbound.response.InventoryResponse;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+
 import java.util.List;
 import java.util.UUID;
 

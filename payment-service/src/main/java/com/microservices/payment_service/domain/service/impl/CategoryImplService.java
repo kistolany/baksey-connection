@@ -1,4 +1,4 @@
-package com.microservices.product_service.domain.service.impl;
+package com.microservices.payment_service.domain.service.impl;
 
 import com.microservices.common_service.constants.ResponseConstants;
 import com.microservices.common_service.domain.PageRequest;
@@ -9,10 +9,10 @@ import com.microservices.common_service.utils.CommonUtils;
 import com.microservices.product_service.application.request.CategoryRequest;
 import com.microservices.product_service.application.response.CategoryResponse;
 import com.microservices.product_service.domain.db_repo.BrandDomainRepo;
+import com.microservices.product_service.domain.db_repo.CategoryDomainRepo;
 import com.microservices.product_service.domain.mapper.CategoryMapper;
 import com.microservices.product_service.domain.model.BrandModel;
 import com.microservices.product_service.domain.model.CategoryModel;
-import com.microservices.product_service.domain.db_repo.CategoryDomainRepo;
 import com.microservices.product_service.domain.outbound.feignclient.AttachmentClient;
 import com.microservices.product_service.domain.service.BrandService;
 import com.microservices.product_service.domain.service.CategoryService;
@@ -20,13 +20,12 @@ import com.microservices.product_service.infrastructure.repository.CategoryRepos
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
-import java.util.UUID;
-
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @AllArgsConstructor

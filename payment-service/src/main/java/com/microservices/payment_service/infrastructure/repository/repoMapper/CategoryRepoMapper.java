@@ -1,13 +1,12 @@
-package com.microservices.product_service.infrastructure.repository.repoMapper;
-
-import java.util.UUID;
-
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+package com.microservices.payment_service.infrastructure.repository.repoMapper;
 
 import com.microservices.product_service.domain.model.CategoryModel;
 import com.microservices.product_service.infrastructure.repository.entity.BrandEntity;
 import com.microservices.product_service.infrastructure.repository.entity.CategoryEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+import java.util.UUID;
 
 @Mapper(componentModel = "spring")
 public interface CategoryRepoMapper {

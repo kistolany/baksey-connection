@@ -1,4 +1,4 @@
-package com.microservices.product_service.domain.service.impl;
+package com.microservices.payment_service.domain.service.impl;
 
 import com.microservices.common_service.constants.ResponseConstants;
 import com.microservices.common_service.domain.ResponseModel;
@@ -6,22 +6,20 @@ import com.microservices.common_service.exception.ApiException;
 import com.microservices.common_service.utils.CommonUtils;
 import com.microservices.product_service.application.request.BrandRequest;
 import com.microservices.product_service.application.response.BrandResponse;
+import com.microservices.product_service.domain.db_repo.BrandDomainRepo;
 import com.microservices.product_service.domain.mapper.BrandMapper;
 import com.microservices.product_service.domain.model.BrandModel;
-import com.microservices.product_service.domain.db_repo.BrandDomainRepo;
 import com.microservices.product_service.domain.outbound.feignclient.AttachmentClient;
 import com.microservices.product_service.domain.service.BrandService;
 import com.microservices.product_service.infrastructure.repository.BrandRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @AllArgsConstructor
