@@ -1,0 +1,31 @@
+name: Baksey Microservices CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        # This creates the .jar files for all your services
+        run: mvn clean package -DskipTests
+
+      - name: Build Docker Images
+        # This uses your docker-compose.yml to build the images
+        run: docker-compose build
+
+      - name: Verify Images
+        run: docker images
