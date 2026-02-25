@@ -58,7 +58,7 @@ services:
       attachment.minio.endpoint: http://minio:9000
       attachment.minio.access-key: minioadmin
       attachment.minio.secret-key: minioadmin
-      attachment.minio.bucket: baksey-image
+      attachment.minio.bucket: images
     depends_on:
       - minio
     networks:
