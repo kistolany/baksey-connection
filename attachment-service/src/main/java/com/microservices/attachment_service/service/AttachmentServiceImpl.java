@@ -76,11 +76,15 @@ public class AttachmentServiceImpl implements AttachmentService {
         log.info("START   : Getting metadata for file: {} in folder: {}", id, folder);
         var stat = repository.getObjectStat(folder, id);
 
+        String baseUrl = minioBaseUrl.endsWith("/") ? minioBaseUrl : minioBaseUrl + "/";
+        String fullUrl = String.format("%s%s/%s/%s", baseUrl, bucketName, folder, id);
+
         FileMetadataResponse response = FileMetadataResponse.builder()
                 .id(id)
                 .folder(folder)
                 .size(stat.size())
                 .contentType(stat.contentType())
+                .url(fullUrl)
                 .build();
 
         log.info("FINISH  : Retrieved metadata for file: {}", id);
@@ -91,6 +95,13 @@ public class AttachmentServiceImpl implements AttachmentService {
     public ResponseModel<List<FileMetadataResponse>> listFiles(String folder) {
         log.info("START   : Listing files in folder: {}", folder);
         List<FileMetadataResponse> files = repository.list(folder);
+        
+        String baseUrl = minioBaseUrl.endsWith("/") ? minioBaseUrl : minioBaseUrl + "/";
+        files.forEach(file -> {
+            String fullUrl = String.format("%s%s/%s/%s", baseUrl, bucketName, folder, file.getId());
+            file.setUrl(fullUrl);
+        });
+
         log.info("FINISH  : Found {} files in folder: {}", files.size(), folder);
         return ResponseModel.success(files);
     }
