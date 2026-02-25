@@ -12,4 +12,5 @@ public class FileMetadataResponse {
     private String folder;
     private long size;
     private String contentType;
+    private String url;
 }

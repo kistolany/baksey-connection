@@ -8,6 +8,7 @@ import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.InputStream;
 import java.util.*;
@@ -19,7 +20,8 @@ public class MinioRepository {
 
     private final MinioClient minioClient;
 
-    private final String bucket = "images";
+    @Value("${attachment.minio.bucket}")
+    private String bucket;
 
     // =============================
     // Upload
@@ -135,8 +137,22 @@ public class MinioRepository {
         boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
 
         if (!found) {
-
             minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
         }
+
+        // Set Public Read Policy (Always apply to ensure existing buckets are public)
+        String policy = "{\n" +
+                "  \"Statement\": [\n" +
+                "    {\n" +
+                "      \"Action\": \"s3:GetObject\",\n" +
+                "      \"Effect\": \"Allow\",\n" +
+                "      \"Principal\": \"*\",\n" +
+                "      \"Resource\": \"arn:aws:s3:::" + bucket + "/*\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"Version\": \"2012-10-17\"\n" +
+                "}";
+
+        minioClient.setBucketPolicy(SetBucketPolicyArgs.builder().bucket(bucket).config(policy).build());
     }
 }
