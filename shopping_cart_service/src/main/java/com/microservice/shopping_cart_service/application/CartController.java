@@ -47,7 +47,7 @@ public class CartController {
         return cartService.toggleItemStatus(userId, productId, isChecked);
     }
 
-    @DeleteMapping("/items/{productId}")
+    @DeleteMapping("/users/{userId}/cart/items/{productId}")
     public ResponseModel<Void> removeItem(
             @PathVariable UUID productId,
             @RequestParam("userId") String userId) {
