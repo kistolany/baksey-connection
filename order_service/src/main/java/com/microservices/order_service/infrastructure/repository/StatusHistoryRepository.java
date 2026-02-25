@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface StatusHistoryRepository extends JpaRepository<OrderStatusHistoryEntity, Long> {
     List<OrderStatusHistoryEntity> findAllByOrderUuid(UUID orderId);
+
     @Transactional
     void deleteByOrderUuid(UUID orderUuid);
 }

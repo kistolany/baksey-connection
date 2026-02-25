@@ -29,7 +29,6 @@ import com.microservices.order_service.domain.outbound.respone.ProductResponse;
 import com.microservices.order_service.domain.service.OrderService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -155,7 +154,7 @@ public class OrderServiceImpl implements OrderService {
                             item.setProductName(prodResp.getProductName());
                             item.setDescription(prodResp.getDescription());
                             item.setUnitPrice(prodResp.getSalePrice());
-                            item.setProductImage(prodResp.getImagePath());
+                            item.setProductImage(prodResp.getImages().get(0));
                         }
                     });
                 }
@@ -177,121 +176,178 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public ResponseModel<OrderResponse> createOrder(OrderRequest request) {
-        log.info("Start: making order with body: {}", CommonUtils.toJsonString(request));
 
-        // Validation: Check for empty items
-        if (request.getItems() == null || request.getItems().isEmpty()) {
-            log.error("Items list cannot be empty");
-            throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST, "Items list cannot be empty");
-        }
+        log.info("CreateOrder START | Request: {}", CommonUtils.toJsonString(request));
 
-        // Map to get list product uuid
-        List<String> productIds = request.getItems().stream().map(OrderItemRequest.OrderItem::getProductId).map(UUID::toString).toList();
+        try {
 
-        // Call product client & Prepare data
-        ResponseModel<List<ProductResponse>> products = productFeignClient.getProductByIds(productIds);
-
-        // Call inventory client & Prepare data
-        ResponseModel<List<InventoryResponse>> fetchStock = inventoryFeignClient.getBulkStock(productIds);
-
-        // Call method address client & Prepare data
-        Map<UUID, AddressResponse> addressCheck = fetchAddressMap(List.of(request.getDeliveryAddressId()));
-
-        // Map to price of productId
-        Map<UUID, BigDecimal> priceMap = products.getData().stream().collect(Collectors.toMap(p -> UUID.fromString(p.getProductId()), ProductResponse::getSalePrice, (a, b) -> a));
-
-        // Map to get stock
-        Map<UUID, Integer> stockMap = fetchStock.getData().stream().collect(Collectors.toMap(InventoryResponse::getProductId, InventoryResponse::getAvailableStock, (a, b) -> a));
-
-        // Validate  address Service
-        if (addressCheck == null || addressCheck.isEmpty()) {
-            log.error("Invalid Delivery Address");
-            throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST, "Invalid Delivery Address");
-        }
-
-        // Fetch available stock from Inventory Service
-        if (products.getData() == null) {
-            log.error("Failed to fetch product details from Product Service");
-            throw new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Failed to fetch product details");
-        }
-
-        // Fetch available stock from Inventory Service
-        if (fetchStock.getData() == null) {
-            log.error("Failed to fetch inventory details from inventory Service");
-            throw new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Failed to get product details");
-        }
-
-        // Validation: Check stock fetched
-        if (stockMap.isEmpty()) {
-            log.error("Failed to fetch stock details from Inventory Service");
-            throw new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Failed to fetch stock details");
-        }
-
-        // Validate total request size (Size check)
-        if (request.getItems().size() > priceMap.size()) {
-            log.error("Failed: Some products are invalid or unavailable");
-            throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST, "Some products are invalid or unavailable.");
-        }
-
-        // Declaration of grand total and items to save
-        BigDecimal grandTotal = BigDecimal.ZERO;
-        List<OrderItemModel> itemsToSave = new ArrayList<>();
-
-        for (OrderItemRequest.OrderItem itemDto : request.getItems()) {
-            UUID pId = itemDto.getProductId();
-            BigDecimal unitPrice = priceMap.get(pId);
-            Integer availableStock = stockMap.getOrDefault(pId, 0);
-
-            // Validation price
-            if (unitPrice == null || unitPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                log.error("Price not found for product Id: {}", itemDto.getProductId());
-                throw new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Price not found for id : " + itemDto.getProductId());
-            }
-
-            // 2. Stock Validation (Combined and fixed null-safety)
-            if (availableStock == null || availableStock <= 0) {
-                log.error("Out of stock for productId: {}", itemDto.getProductId());
-                throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST, "Product is out of stock: " + itemDto.getProductId());
-            }
-
-            if (availableStock < itemDto.getQuantity()) {
-                log.error("Insufficient stock. Product: {}, Requested: {}, Available: {}",
-                        itemDto.getProductId(), itemDto.getQuantity(), availableStock);
+            // 1️⃣ Validate items
+            if (request.getItems() == null || request.getItems().isEmpty()) {
+                log.warn("CreateOrder FAILED | Items list empty");
                 throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST,
-                        "Insufficient stock for: " + itemDto.getProductId() + ". Available: " + availableStock);
+                        "Items list cannot be empty");
             }
 
-            // Calculation of Subtotal and Grand Total
-            BigDecimal subTotal = unitPrice.multiply(BigDecimal.valueOf(itemDto.getQuantity()));
-            grandTotal = grandTotal.add(subTotal);
+            // 2️⃣ Validate quantity
+            for (OrderItemRequest.OrderItem item : request.getItems()) {
+                if (item.getQuantity() <= 0) {
+                    log.warn("CreateOrder FAILED | Invalid quantity for product {}", item.getProductId());
+                    throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST,
+                            "Invalid quantity for product: " + item.getProductId());
+                }
+            }
 
-            // Prepare the Model for the Repo
-            OrderItemModel itemModel = new OrderItemModel();
-            itemModel.setProductId(itemDto.getProductId());
-            itemModel.setQuantity(itemDto.getQuantity());
-            itemModel.setUnitPrice(unitPrice);
-            itemModel.setSubTotal(subTotal);
-            itemModel.setStatus("ACTIVE");
+            // 3️⃣ Extract product IDs
+            List<String> productIds = request.getItems().stream()
+                    .map(OrderItemRequest.OrderItem::getProductId)
+                    .filter(Objects::nonNull)
+                    .map(UUID::toString)
+                    .distinct()
+                    .toList();
 
-            // Add to list
-            itemsToSave.add(itemModel);
+            if (productIds.isEmpty()) {
+                throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST,
+                        "Invalid product IDs");
+            }
+
+            log.info("CreateOrder | Fetching products: {}", productIds);
+
+            // 4️⃣ Product Service
+            ResponseModel<List<ProductResponse>> productResponse =
+                    productFeignClient.getProductByIds(productIds);
+
+            if (productResponse == null || productResponse.getData() == null) {
+                throw new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                        "Product service returned empty response");
+            }
+
+            log.info("CreateOrder | Fetching inventory");
+
+            // 5️⃣ Inventory Service
+            ResponseModel<List<InventoryResponse>> inventoryResponse =
+                    inventoryFeignClient.getBulkStock(productIds);
+
+            if (inventoryResponse == null || inventoryResponse.getData() == null) {
+                throw new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                        "Inventory service returned empty response");
+            }
+
+            // 6️⃣ Validate Address
+            Map<UUID, AddressResponse> addressMap =
+                    fetchAddressMap(List.of(request.getDeliveryAddressId()));
+
+            if (addressMap.isEmpty()) {
+                throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST,
+                        "Invalid Delivery Address");
+            }
+
+            // 7️⃣ SAFE price map (NO STREAM CRASH)
+            Map<UUID, BigDecimal> priceMap = new HashMap<>();
+
+            for (ProductResponse p : productResponse.getData()) {
+
+                log.info("Product -> id: {}, price: {}", p.getProductId(), p.getSalePrice());
+
+                if (p.getProductId() == null || p.getSalePrice() == null) {
+                    log.warn("Skipping invalid product record from Product Service");
+                    continue;
+                }
+
+                priceMap.put(UUID.fromString(p.getProductId()), p.getSalePrice());
+            }
+
+            if (priceMap.isEmpty()) {
+                throw new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                        "No valid product price found");
+            }
+
+            // 8️⃣ SAFE stock map (NO STREAM CRASH)
+            Map<UUID, Integer> stockMap = new HashMap<>();
+
+            for (InventoryResponse inv : inventoryResponse.getData()) {
+
+                log.info("Inventory -> id: {}, stock: {}", inv.getProductId(), inv.getAvailableStock());
+
+                if (inv.getProductId() == null || inv.getAvailableStock() == null) {
+                    log.warn("Skipping invalid inventory record");
+                    continue;
+                }
+
+                stockMap.put(inv.getProductId(), inv.getAvailableStock());
+            }
+
+            if (stockMap.isEmpty()) {
+                throw new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                        "No valid stock information found");
+            }
+
+            // 9️⃣ Process order
+            BigDecimal grandTotal = BigDecimal.ZERO;
+            List<OrderItemModel> itemsToSave = new ArrayList<>();
+
+            for (OrderItemRequest.OrderItem itemDto : request.getItems()) {
+
+                UUID productId = itemDto.getProductId();
+                Integer quantity = itemDto.getQuantity();
+
+                BigDecimal unitPrice = priceMap.get(productId);
+                Integer availableStock = stockMap.get(productId);
+
+                if (unitPrice == null) {
+                    throw new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                            "Price not found for product: " + productId);
+                }
+
+                if (availableStock == null || availableStock <= 0) {
+                    throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST,
+                            "Product is out of stock: " + productId);
+                }
+
+                if (availableStock < quantity) {
+                    throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST,
+                            "Insufficient stock for product: " + productId +
+                                    ". Available: " + availableStock);
+                }
+
+                BigDecimal subTotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+                grandTotal = grandTotal.add(subTotal);
+
+                OrderItemModel itemModel = new OrderItemModel();
+                itemModel.setProductId(productId);
+                itemModel.setQuantity(quantity);
+                itemModel.setUnitPrice(unitPrice);
+                itemModel.setSubTotal(subTotal);
+                itemModel.setStatus("ACTIVE");
+
+                itemsToSave.add(itemModel);
+            }
+
+            // 🔟 Save Order
+            OrderModel savedOrder = orderDomainRepo.saveOrder(
+                    request.getUserId(),
+                    request.getDeliveryAddressId(),
+                    grandTotal);
+
+            orderDomainRepo.saveAllItems(savedOrder.getUuid(), itemsToSave);
+
+            OrderModel finalOrder = orderDomainRepo
+                    .getOneOrder(savedOrder.getUuid())
+                    .orElseThrow();
+
+            log.info("CreateOrder SUCCESS | OrderId: {} | Total: {}",
+                    finalOrder.getUuid(), grandTotal);
+
+            return ResponseModel.success(addressNameResponse(finalOrder));
+
+        } catch (ApiException e) {
+            log.warn("CreateOrder BUSINESS ERROR | {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("CreateOrder SYSTEM ERROR", e);
+            throw new ApiException(ResponseConstants.ResponseStatus.INTERNAL_SERVER_ERROR,
+                    "Unexpected error while creating order");
         }
-
-        // save Grand Total to Order Table
-        OrderModel savedOrder = orderDomainRepo.saveOrder(
-                request.getUserId(),
-                request.getDeliveryAddressId(),
-                grandTotal);
-
-
-        // Save All Items linked to the new Order UUID
-        orderDomainRepo.saveAllItems(savedOrder.getUuid(), itemsToSave);
-        OrderModel updatedOrder = orderDomainRepo.getOneOrder(savedOrder.getUuid()).get();
-
-        log.info("Finished {} created order and  successfully with total {}", CommonUtils.toJsonString(updatedOrder), grandTotal);
-        return ResponseModel.success(addressNameResponse(updatedOrder));
     }
-
     @Override
     @Transactional
     public ResponseModel<OrderResponse> confirmOrder(UUID orderId) {

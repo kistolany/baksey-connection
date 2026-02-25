@@ -12,6 +12,5 @@ import java.util.UUID;
 @AllArgsConstructor
 public class InventoryRequest {
     private UUID productId;
-    @JsonProperty("availableStock")
-    private Integer quantity;
+    private Integer availableStock;
 }
