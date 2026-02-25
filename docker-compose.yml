@@ -1,7 +1,6 @@
-version: '3.8'
+version: "3.8"
 
 services:
-
   postgres:
     image: postgres:15
     container_name: baksey-db
@@ -16,7 +15,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -49,8 +48,8 @@ services:
   # ✅ Attachment Service (NEW)
   attachment-service:
     build:
-      context: ./attachment-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: attachment-service/Dockerfile
     container_name: attachment-service
     ports:
       - "8088:8088"
