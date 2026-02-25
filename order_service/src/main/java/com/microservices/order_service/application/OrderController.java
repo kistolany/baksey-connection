@@ -44,7 +44,7 @@ public class OrderController {
         return orderService.listItemById(id);
     }
 
-    @PostMapping( produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/checkout", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseModel<OrderResponse> saveOrder(@Valid @RequestBody OrderRequest request) {
         log.info("POST: Checkout order vie param: {}", CommonUtils.toJsonString(request));
         return orderService.createOrder(request);

@@ -47,7 +47,9 @@ public class BrandController {
 
     @PostMapping(
             value = "/{brandId}/image",
+            produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
     public ResponseModel<String> uploadBrandImage(
             @PathVariable UUID brandId,
             @RequestParam("file") MultipartFile file) {

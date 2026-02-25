@@ -180,7 +180,7 @@ public class CategoryImplService implements CategoryService {
 
         try {
             // Upload new image
-            ResponseModel<String> attachmentServiceResponse = attachmentClient.uploadImage("products", file);
+            ResponseModel<String> attachmentServiceResponse = attachmentClient.uploadImage("category", file);
             if (attachmentServiceResponse == null) {
                 throw new ApiException("Image upload failed");
             }
@@ -193,7 +193,7 @@ public class CategoryImplService implements CategoryService {
             // Delete old image (safe delete)
             if (oldImagePath != null) {
                 try {
-                    attachmentClient.deleteImage("products", oldImagePath);
+                    attachmentClient.deleteImage("category", oldImagePath);
                 } catch (Exception ex) {
                     log.warn("Failed to delete old category image: {}", oldImagePath);
                 }
