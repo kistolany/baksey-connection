@@ -169,7 +169,7 @@ public class CartServiceImpl implements CartService {
 
             if (product != null) {
                 item.setProductName(product.getProductName());
-                item.setProductImage(product.getImagePath());
+                item.setProductImage(product.getImages().get(0));
             }
         });
 
@@ -202,7 +202,7 @@ public class CartServiceImpl implements CartService {
                 ProductResponse p = productMap.get(item.getProductId().toString());
                 if (p != null) {
                     item.setProductName(p.getProductName());
-                    item.setProductImage(p.getImagePath());
+                    item.setProductImage(p.getImages().get(0));
                 }
             });
         }
@@ -263,7 +263,7 @@ public class CartServiceImpl implements CartService {
                 ProductResponse p = productMap.get(item.getProductId().toString());
                 if (p != null) {
                     item.setProductName(p.getProductName());
-                    item.setProductImage(p.getImagePath());
+                    item.setProductImage(p.getImages().get(0));
                 }
             });
         }
