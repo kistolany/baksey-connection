@@ -54,7 +54,7 @@ public class CategoryController {
     }
 
     @PostMapping(
-            value = "/{categoryId}/ubload",
+            value = "/{categoryId}/image",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseModel<String> upload(
             @PathVariable UUID categoryId,

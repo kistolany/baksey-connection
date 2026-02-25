@@ -131,7 +131,7 @@ public class BrandImplService implements BrandService {
         try {
             //  Upload new image using Attachment Service
             ResponseModel<String> attachmentResponse =
-                    attachmentClient.uploadImage("products", file);
+                    attachmentClient.uploadImage("brand", file);
 
             if (attachmentResponse == null || attachmentResponse.getData() == null) {
                 log.error("Image upload failed for brand {}", brandId);
@@ -146,7 +146,7 @@ public class BrandImplService implements BrandService {
             //  Delete old image safely
             if (oldImageId != null) {
                 try {
-                    attachmentClient.deleteImage("products", oldImageId);
+                    attachmentClient.deleteImage("brand", oldImageId);
                 } catch (Exception e) {
                     log.warn("Failed to delete old brand image: {}", oldImageId);
                 }
