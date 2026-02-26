@@ -1,7 +1,6 @@
 package com.microservices.product_service.infrastructure.repository.repoMapper;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import com.microservices.product_service.domain.model.BrandModel;
 import com.microservices.product_service.infrastructure.repository.entity.BrandEntity;
 

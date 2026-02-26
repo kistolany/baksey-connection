@@ -11,12 +11,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import com.microservices.product_service.domain.model.ProductModel;
 import com.microservices.product_service.domain.db_repo.ProductDomainRepo;
+import com.microservices.product_service.domain.filter.ProductFilterSpecification;
+import com.microservices.product_service.domain.constant.Constants;
 import com.microservices.product_service.infrastructure.repository.ProductRepository;
 import com.microservices.product_service.infrastructure.repository.entity.BrandEntity;
 import com.microservices.product_service.infrastructure.repository.entity.CategoryEntity;
 import com.microservices.product_service.infrastructure.repository.entity.ProductEntity;
 import com.microservices.product_service.infrastructure.repository.repoMapper.ProductRepoMapper;
-import com.microservices.product_service.application.response.ProductSpecification;
+
 import lombok.AllArgsConstructor;
 
 @Slf4j
@@ -27,7 +29,8 @@ public class ProductRepoImpl implements ProductDomainRepo {
     private final ProductRepository productRepository;
 
     @Override
-    public ProductModel create(String productName, String description, BigDecimal salePrice, String categoryId, String brandId) {
+    public ProductModel create(String productName, String description, BigDecimal salePrice, String categoryId,
+            String brandId, Constants.ProductStatus status) {
 
         // Build the Domain Model
         ProductModel productModel = ProductModel.builder()
@@ -36,6 +39,7 @@ public class ProductRepoImpl implements ProductDomainRepo {
                 .salePrice(salePrice)
                 .categoryId(UUID.fromString(categoryId))
                 .brandId(UUID.fromString(brandId))
+                .status(status != null ? status : Constants.ProductStatus.DRAFT)
                 .build();
 
         // Map to Entity
@@ -59,7 +63,8 @@ public class ProductRepoImpl implements ProductDomainRepo {
     }
 
     @Override
-    public ProductModel update(ProductModel record,String productName, String description, BigDecimal salePrice, String categoryId, String brandId, String id) {
+    public ProductModel update(ProductModel record, String productName, String description, BigDecimal salePrice,
+            String categoryId, String brandId, Constants.ProductStatus status, String id) {
 
         // Fetch the existing entity to preserve status
         ProductEntity productEntity = productRepository.findById(UUID.fromString(id)).get();
@@ -68,6 +73,11 @@ public class ProductRepoImpl implements ProductDomainRepo {
         productEntity.setName(productName);
         productEntity.setDescription(description);
         productEntity.setSalePrice(salePrice);
+
+        // Update status if provided, otherwise keep existing
+        if (status != null) {
+            productEntity.setStatus(status);
+        }
 
         // Update brand and category entities
         CategoryEntity categoryEntity = new CategoryEntity();
@@ -87,14 +97,15 @@ public class ProductRepoImpl implements ProductDomainRepo {
     public Page<ProductModel> getAllByCategoryUuid(String categoryId, Pageable pageable) {
 
         // call find all by category product by category id
-        Page<ProductEntity> listByCategoryUuid = productRepository.findAllByCategoryUuid(UUID.fromString(categoryId), pageable);
+        Page<ProductEntity> listByCategoryUuid = productRepository.findAllByCategoryUuid(UUID.fromString(categoryId),
+                pageable);
 
         // map entity to model and return
         return listByCategoryUuid.map(productRepoMapper::toProductModel);
     }
 
     @Override
-    public Page<ProductModel> searchProducts(ProductSpecification spec, Pageable pageable) {
+    public Page<ProductModel> searchProducts(ProductFilterSpecification spec, Pageable pageable) {
 
         // Execute the search using JPA Repository
         Page<ProductEntity> productPage = productRepository.findAll(spec, pageable);
@@ -126,6 +137,20 @@ public class ProductRepoImpl implements ProductDomainRepo {
 
         // save to entity
         productRepository.save(productEntity);
+    }
+
+    @Override
+    @Transactional
+    public ProductModel updateStatus(String id, Constants.ProductStatus status) {
+
+        // find product by id
+        ProductEntity productEntity = productRepository.findById(UUID.fromString(id)).get();
+
+        // update status
+        productEntity.setStatus(status);
+
+        // save and return mapped model
+        return productRepoMapper.toProductModel(productRepository.save(productEntity));
     }
 
 }

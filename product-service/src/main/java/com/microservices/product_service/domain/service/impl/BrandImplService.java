@@ -17,7 +17,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -39,15 +38,17 @@ public class BrandImplService implements BrandService {
         // call method for validate exist name
         boolean isDuplicate = brandRepository.existsByName(request.getName());
         if (isDuplicate) {
-            log.error("Brand name {} is already exist!",request.getName());
-            throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST, String.format("Brand name %s is already exist!", request.getName()));
+            log.error("Brand name {} is already exist!", request.getName());
+            throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST,
+                    String.format("Brand name %s is already exist!", request.getName()));
         }
 
         // call create method from repo for save
         BrandModel brandModel = brandDomainRepo.create(request.getName());
         BrandResponse brandResponse = brandMapper.toBrandResponse(brandModel);
 
-        log.info("Finish: Created Brand by request body :{} With successfully!",CommonUtils.toJsonString(brandResponse));
+        log.info("Finish: Created Brand by request body :{} With successfully!",
+                CommonUtils.toJsonString(brandResponse));
         return ResponseModel.success(brandResponse);
     }
 
@@ -56,9 +57,10 @@ public class BrandImplService implements BrandService {
         log.info("Start: Getting Brand by id {}", id);
 
         // call getById from domain for validate not found id
-        BrandModel brandById = brandDomainRepo.getById(id.toString()).orElseThrow(()->{
-            log.error("brand id {} is not found !",id);
-            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,String.format("brand id %s is not found !",id));
+        BrandModel brandById = brandDomainRepo.getById(id.toString()).orElseThrow(() -> {
+            log.error("brand id {} is not found !", id);
+            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                    String.format("brand id %s is not found !", id));
         });
 
         log.info("Finish: Getting Brand by id {}", id);
@@ -84,66 +86,64 @@ public class BrandImplService implements BrandService {
         log.info("Start: Updating Brand ID: {} with new name: {}", id, brandRequest.getName());
 
         BrandModel brandModel = brandDomainRepo.getById(id).orElseThrow(() -> {
-            log.error("Brand not found id {}",id);
+            log.error("Brand not found id {}", id);
             return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Brand not found");
         });
 
         // Validate duplicated brand name
         if (brandModel.getName().equals(brandRequest.getName())) {
             log.error("Brand name : {} is already exist !", brandRequest.getName());
-            throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST, String.format("Brand name %s is already exist!", brandRequest.getName()));
+            throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST,
+                    String.format("Brand name %s is already exist!", brandRequest.getName()));
         }
 
         // Preserve the existing status when updating
-       var model =  brandDomainRepo.update(brandModel, brandRequest.getName(), brandRequest.getImageUrl());
-       var response = brandMapper.toBrandResponse(model);
-        log.info("Finish: Updating Brand by with id : {} was successfully !",id);
+        var model = brandDomainRepo.update(brandModel, brandRequest.getName(), brandRequest.getImageUrl());
+        var response = brandMapper.toBrandResponse(model);
+        log.info("Finish: Updating Brand by with id : {} was successfully !", id);
         return ResponseModel.success(response);
     }
 
     @Override
     @Transactional
-    public ResponseModel<String> uploadImage(UUID brandId, MultipartFile file) {
+    public ResponseModel<List<String>> uploadImage(UUID brandId, List<MultipartFile> file) {
 
         log.info("Start: Uploading image for brand ID: {}", brandId);
 
-        //  Validate brand exists
+        // Validate brand exists
         BrandModel brand = brandDomainRepo.getById(brandId.toString())
                 .orElseThrow(() -> {
                     log.error("Brand id {} not found", brandId);
                     return new ApiException(
                             ResponseConstants.ResponseStatus.NOT_FOUND,
-                            "Brand not found"
-                    );
+                            "Brand not found");
                 });
 
         // Validate file
         if (file == null || file.isEmpty()) {
             throw new ApiException(
                     ResponseConstants.ResponseStatus.BAD_REQUEST,
-                    "Image file must not be empty"
-            );
+                    "Image file must not be empty");
         }
 
-        //  Keep old image id
+        // Keep old image id
         String oldImageId = brand.getImageUrl();
 
         try {
-            //  Upload new image using Attachment Service
-            ResponseModel<String> attachmentResponse =
-                    attachmentClient.uploadImage("brand", file);
+            // Upload new image using Attachment Service
+            List<String> newImageIds = attachmentClient.uploadImage("brand", file).getData();
 
-            if (attachmentResponse == null || attachmentResponse.getData() == null) {
+            if (newImageIds == null || newImageIds.isEmpty()) {
                 log.error("Image upload failed for brand {}", brandId);
                 throw new ApiException("Image upload failed");
             }
 
-            String newImageId = attachmentResponse.getData();
+            String newImageId = newImageIds.get(0);
 
             // Update DB from repo
             brandDomainRepo.updateBrandImage(brandId, newImageId);
 
-            //  Delete old image safely
+            // Delete old image safely
             if (oldImageId != null) {
                 try {
                     attachmentClient.deleteImage("brand", oldImageId);
@@ -153,14 +153,13 @@ public class BrandImplService implements BrandService {
             }
 
             log.info("Finish: Brand image upload successful");
-            return ResponseModel.success(newImageId);
+            return ResponseModel.success(newImageIds);
 
         } catch (Exception e) {
             log.error("Brand image upload failed: {}", e.getMessage());
             throw new ApiException(
                     ResponseConstants.ResponseStatus.BAD_REQUEST,
-                    "Failed to upload brand image"
-            );
+                    "Failed to upload brand image");
         }
     }
 

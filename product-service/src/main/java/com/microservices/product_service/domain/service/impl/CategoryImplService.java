@@ -14,7 +14,6 @@ import com.microservices.product_service.domain.model.BrandModel;
 import com.microservices.product_service.domain.model.CategoryModel;
 import com.microservices.product_service.domain.db_repo.CategoryDomainRepo;
 import com.microservices.product_service.domain.outbound.feignclient.AttachmentClient;
-import com.microservices.product_service.domain.service.BrandService;
 import com.microservices.product_service.domain.service.CategoryService;
 import com.microservices.product_service.infrastructure.repository.CategoryRepository;
 import jakarta.transaction.Transactional;
@@ -33,7 +32,6 @@ public class CategoryImplService implements CategoryService {
     private final CategoryDomainRepo categoryDomainRepo;
     private final CategoryMapper categoryMapper;
     private final CategoryRepository categoryRepository;
-    private final BrandService brandService;
     private final BrandDomainRepo brandDomainRepo;
     private final AttachmentClient attachmentClient;
 
@@ -45,7 +43,8 @@ public class CategoryImplService implements CategoryService {
         String brandId = request.getBrandId().toString();
         brandDomainRepo.getById(brandId).orElseThrow(() -> {
             log.error("Brand id : {} is not found !", brandId);
-            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Brand id : " + brandId + " is not found !");
+            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                    "Brand id : " + brandId + " is not found !");
         });
 
         // Validate for duplicate name in brand
@@ -60,7 +59,7 @@ public class CategoryImplService implements CategoryService {
         // Call method create from repo
         CategoryModel categoryModel = categoryDomainRepo.create(request.getName(), request.getBrandId().toString());
         CategoryResponse response = categoryMapper.toCategoryResponse(categoryModel);
-        log.info("Finish: Create category by request body {} with successfully !",CommonUtils.toJsonString(response));
+        log.info("Finish: Create category by request body {} with successfully !", CommonUtils.toJsonString(response));
         return ResponseModel.success(response);
     }
 
@@ -72,7 +71,8 @@ public class CategoryImplService implements CategoryService {
         CategoryModel categoryModel = categoryDomainRepo.getById(id)
                 .orElseThrow(() -> {
                     log.error("Category id : {} is not found !", id);
-                    return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, String.format("Category id : %s is not found !", id));
+                    return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                            String.format("Category id : %s is not found !", id));
                 });
 
         // Map model to response and return it
@@ -105,7 +105,8 @@ public class CategoryImplService implements CategoryService {
         // Call method for not found category id
         CategoryModel categoryModel = categoryDomainRepo.getById(id).orElseThrow(() -> {
             log.error("Category id : {} is not found!", id);
-            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Category id : " + id + " is not found !");
+            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                    "Category id : " + id + " is not found !");
         });
 
         // validate existing brand
@@ -122,17 +123,19 @@ public class CategoryImplService implements CategoryService {
         if (isDuplicateName && isDuplicateBrandId) {
             log.error("Category is already exist in this brand  !");
             throw new ApiException(ResponseConstants.ResponseStatus.BAD_REQUEST,
-                    String.format("Category name = %s is already exist in brand id %s !", categoryRequest.getName(), categoryRequest.getBrandId()));
+                    String.format("Category name = %s is already exist in brand id %s !", categoryRequest.getName(),
+                            categoryRequest.getBrandId()));
         }
 
         // Call update method from repo
-      CategoryModel categoryModel1=  categoryDomainRepo.update(
+        CategoryModel categoryModel1 = categoryDomainRepo.update(
                 categoryRequest.getName(),
                 brandId,
                 id);
 
-      CategoryResponse response =categoryMapper.toCategoryResponse(categoryModel1);
-        log.info("Finish: Updating category by id : {} and body {} with successfully !", id,CommonUtils.toJsonString(response));
+        CategoryResponse response = categoryMapper.toCategoryResponse(categoryModel1);
+        log.info("Finish: Updating category by id : {} and body {} with successfully !", id,
+                CommonUtils.toJsonString(response));
         return ResponseModel.success(response);
     }
 
@@ -150,10 +153,9 @@ public class CategoryImplService implements CategoryService {
         return ResponseModel.success(responses);
     }
 
-
     @Override
     @Transactional
-    public ResponseModel<String> uploadImage(UUID categoryId, MultipartFile file) {
+    public ResponseModel<List<String>> uploadImage(UUID categoryId, List<MultipartFile> file) {
 
         log.info("Start: Uploading image for category ID: {}", categoryId);
 
@@ -163,16 +165,14 @@ public class CategoryImplService implements CategoryService {
                     log.error("Category id {} not found", categoryId);
                     return new ApiException(
                             ResponseConstants.ResponseStatus.NOT_FOUND,
-                            "Category not found"
-                    );
+                            "Category not found");
                 });
 
         // Validate file
         if (file == null || file.isEmpty()) {
             throw new ApiException(
                     ResponseConstants.ResponseStatus.BAD_REQUEST,
-                    "Image file must not be empty"
-            );
+                    "Image file must not be empty");
         }
 
         // Keep old image path
@@ -180,12 +180,12 @@ public class CategoryImplService implements CategoryService {
 
         try {
             // Upload new image
-            ResponseModel<String> attachmentServiceResponse = attachmentClient.uploadImage("category", file);
-            if (attachmentServiceResponse == null) {
+            List<String> newImageIds = attachmentClient.uploadImage("category", file).getData();
+            if (newImageIds == null) {
                 throw new ApiException("Image upload failed");
             }
 
-            String newImageId = attachmentServiceResponse.getData();
+            String newImageId = newImageIds.get(0);
 
             // Update DB
             categoryDomainRepo.updateCategoryImage(categoryId, newImageId);
@@ -200,14 +200,13 @@ public class CategoryImplService implements CategoryService {
             }
 
             log.info("Finish: Category image upload successful");
-            return ResponseModel.success(newImageId);
+            return ResponseModel.success(newImageIds);
 
         } catch (Exception e) {
             log.error("Category image upload failed: {}", e.getMessage());
             throw new ApiException(
                     ResponseConstants.ResponseStatus.BAD_REQUEST,
-                    "Failed to upload category image"
-            );
+                    "Failed to upload category image");
         }
     }
 

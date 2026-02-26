@@ -2,13 +2,11 @@ package com.microservices.product_service.domain.service.impl;
 
 import com.microservices.common_service.constants.ResponseConstants;
 import com.microservices.common_service.domain.*;
-import com.microservices.common_service.domain.ResponseModel;
 import com.microservices.common_service.exception.ApiException;
 import com.microservices.common_service.utils.CommonUtils;
 import com.microservices.product_service.application.request.ProductRequest;
 import com.microservices.product_service.application.response.BrandResponse;
 import com.microservices.product_service.application.response.CategoryResponse;
-import com.microservices.product_service.application.response.ProductSpecification;
 import com.microservices.product_service.domain.db_repo.BrandDomainRepo;
 import com.microservices.product_service.domain.db_repo.CategoryDomainRepo;
 import com.microservices.product_service.domain.outbound.feignclient.AttachmentClient;
@@ -18,10 +16,12 @@ import com.microservices.product_service.application.response.ProductResponse;
 import com.microservices.product_service.domain.outbound.feignclient.InventoryFeignClient;
 import com.microservices.product_service.domain.mapper.ProductMapper;
 import com.microservices.product_service.domain.model.ProductModel;
+import com.microservices.product_service.domain.constant.Constants.ProductStatus;
 import com.microservices.product_service.domain.db_repo.ProductDomainRepo;
+import com.microservices.product_service.domain.filter.ProductFilterRequest;
+import com.microservices.product_service.domain.filter.ProductFilterSpecification;
 import com.microservices.product_service.domain.service.CategoryService;
 import com.microservices.product_service.domain.service.ProductService;
-import com.microservices.product_service.application.request.ProductSearchRequest;
 import com.microservices.product_service.infrastructure.repository.ProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -54,29 +54,30 @@ public class ProductImplService implements ProductService {
         String categoryId = request.getCategoryId().toString();
         categoryDomainRepo.getById(categoryId).orElseThrow(() -> {
             log.error("Category id : {} is not found!", categoryId);
-            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Category id : " + categoryId + " is not found !");
+            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                    "Category id : " + categoryId + " is not found !");
         });
 
         // Validate Brand
         String brandId = request.getBrandId().toString();
         brandDomainRepo.getById(brandId).orElseThrow(() -> {
             log.error("Brand id : {} is not found!", brandId);
-            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Brand id : " + brandId + " is not found !");
+            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                    "Brand id : " + brandId + " is not found !");
         });
 
         // 3. Check for Duplicate
         boolean isDuplicate = productRepository.existsByNameAndCategoryUuidAndBrandUuid(
                 request.getName(),
                 UUID.fromString(request.getCategoryId().toString()),
-                UUID.fromString(brandId)
-        );
+                UUID.fromString(brandId));
 
         if (isDuplicate) {
             log.error("Create Failed: Duplicate product {} found in this category/brand", request.getName());
             throw new ApiException(
                     ResponseConstants.ResponseStatus.BAD_REQUEST,
-                    String.format("Product with name %s already exists in this category and brand!", request.getName())
-            );
+                    String.format("Product with name %s already exists in this category and brand!",
+                            request.getName()));
         }
 
         // Call Repo: Just to save the data
@@ -85,9 +86,8 @@ public class ProductImplService implements ProductService {
                 request.getDescription(),
                 request.getSalePrice(),
                 categoryId,
-                brandId
-
-        );
+                brandId,
+                request.getStatus());
 
         // Setting the request values for inventory
         InventoryRequest inventoryReq = InventoryRequest.builder()
@@ -123,18 +123,15 @@ public class ProductImplService implements ProductService {
 
         ProductResponse productResponse = productMapper.toProductResponse(productModel);
 
-        Map<UUID, Integer> stockMap =
-                fetchStock(List.of(productModel.getId()));
+        Map<UUID, Integer> stockMap = fetchStock(List.of(productModel.getId()));
 
         // ✅ FIX: set quantity to response, NOT model
         productResponse.setQuantity(
-                stockMap.getOrDefault(productModel.getId(), 0)
-        );
+                stockMap.getOrDefault(productModel.getId(), 0));
 
         enrichProductDetails(productResponse, productModel);
 
         log.info("Finish: Getting Product by id {} successfully", id);
-
         return ResponseModel.success(productResponse);
     }
 
@@ -145,34 +142,37 @@ public class ProductImplService implements ProductService {
         // 1. Check if Product exists
         ProductModel product = productDomainRepo.getById(id).orElseThrow(() -> {
             log.error("Product id : {} is not found !", id);
-            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Product id : " + id + " is not found !");
+            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                    "Product id : " + id + " is not found !");
         });
 
         // 2. Validate Category
         String categoryId = productRequest.getCategoryId().toString();
         categoryDomainRepo.getById(categoryId).orElseThrow(() -> {
             log.error("Category id : {} is not found !", categoryId);
-            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Category id : " + categoryId + " is not found !");
+            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                    "Category id : " + categoryId + " is not found !");
         });
 
         // Validate Brand
         String brandId = productRequest.getBrandId().toString();
         brandDomainRepo.getById(brandId).orElseThrow(() -> {
             log.error("Brand id : {} is not found !", brandId);
-            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND, "Brand id : " + brandId + " is not found !");
+            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                    "Brand id : " + brandId + " is not found !");
         });
 
         // 3. Check for Duplicate
         boolean isSameName = product.getName().equalsIgnoreCase(productRequest.getName());
-        boolean isSameCategory = product.getCategoryId().equals(productRequest.getCategoryId().toString());
-        boolean isSameBrand = product.getBrandId().equals(productRequest.getBrandId().toString());
+        boolean isSameCategory = product.getCategoryId().equals(productRequest.getCategoryId());
+        boolean isSameBrand = product.getBrandId().equals(productRequest.getBrandId());
 
         if (isSameName && isSameCategory && isSameBrand) {
             log.error("Update Failed: Product name {}, Category, and Brand are unchanged!", productRequest.getName());
             throw new ApiException(
                     ResponseConstants.ResponseStatus.BAD_REQUEST,
-                    String.format("Product with name %s already exists in this category and brand!", productRequest.getName())
-            );
+                    String.format("Product with name %s already exists in this category and brand!",
+                            productRequest.getName()));
         }
 
         // 4. Call Repo: update the fields and save
@@ -183,6 +183,7 @@ public class ProductImplService implements ProductService {
                 productRequest.getSalePrice(),
                 categoryId,
                 brandId,
+                productRequest.getStatus(),
                 id);
 
         // Map to response and enrich with details
@@ -200,7 +201,8 @@ public class ProductImplService implements ProductService {
     }
 
     @Override
-    public ResponseModel<PageResponse<ProductResponse>> getAllByCategoryUuid(String categoryUuid, PageRequest pageRequest) {
+    public ResponseModel<PageResponse<ProductResponse>> getAllByCategoryUuid(String categoryUuid,
+            PageRequest pageRequest) {
         log.info("Start: Getting paged products by Category id: {}", categoryUuid);
 
         // 1. Validate category existence
@@ -222,7 +224,7 @@ public class ProductImplService implements ProductService {
                     // Set the current stock from the map
                     resp.setQuantity(stockMap.getOrDefault(productModel.getId(), 0));
 
-                    // 🔥 THE MISSING PIECE: Populate Brand and Category Names
+                    // THE MISSING PIECE: Populate Brand and Category Names
                     this.enrichProductDetails(resp, productModel);
 
                     return resp;
@@ -237,11 +239,12 @@ public class ProductImplService implements ProductService {
     }
 
     @Override
-    public ResponseModel<PageResponse<ProductResponse>> searchProducts(ProductSearchRequest request, PageRequest pageRequest) {
+    public ResponseModel<PageResponse<ProductResponse>> searchProducts(ProductFilterRequest request,
+            PageRequest pageRequest) {
         log.info("Start: Searching products with request: {}", CommonUtils.toJsonString(request));
 
         // 1. Create Search Specification
-        ProductSpecification spec = new ProductSpecification(request);
+        ProductFilterSpecification spec = new ProductFilterSpecification(request);
 
         // 2. Call Repo
         Page<ProductModel> page = productDomainRepo.searchProducts(spec, pageRequest.toPageable());
@@ -307,13 +310,11 @@ public class ProductImplService implements ProductService {
         return ResponseModel.success(list);
     }
 
-
     @Override
     @Transactional
-    public ResponseModel<String> uploadImage(UUID productId, MultipartFile file) {
+    public ResponseModel<List<String>> uploadImage(UUID productId, List<MultipartFile> file) {
         // 1. Upload file to storage service
-        ResponseModel<String> attachmentResponse = attachmentClient.uploadImage("products", file);
-        String newImageId = attachmentResponse.getData();
+        List<String> newImageIds = attachmentClient.uploadImage("products", file).getData();
 
         // 2. Fetch current product
         ProductModel product = productDomainRepo.getById(productId.toString())
@@ -321,16 +322,46 @@ public class ProductImplService implements ProductService {
 
         // 3. Update the list (Append mode)
         List<String> currentImages = product.getImages();
-        if (currentImages == null) currentImages = new ArrayList<>();
-        currentImages.add(newImageId);
+        if (currentImages == null)
+            currentImages = new ArrayList<>();
+        currentImages.addAll(newImageIds);
 
         // 4. Save back to DB
         productDomainRepo.updateProductImage(productId, currentImages);
 
-        return ResponseModel.success(newImageId);
+        return ResponseModel.success(newImageIds);
     }
 
-    //Helper
+    @Override
+    @Transactional
+    public ResponseModel<ProductResponse> updateStatus(String id, ProductStatus status) {
+        log.info("Start: Updating status of Product ID: {} to {}", id, status);
+
+        // 1. Validate product exists
+        productDomainRepo.getById(id).orElseThrow(() -> {
+            log.error("Product id : {} is not found!", id);
+            return new ApiException(ResponseConstants.ResponseStatus.NOT_FOUND,
+                    "Product id : " + id + " is not found!");
+        });
+
+        // 2. Update status
+        ProductModel updatedProduct = productDomainRepo.updateStatus(id, status);
+
+        // 3. Map to response
+        ProductResponse productResponse = productMapper.toProductResponse(updatedProduct);
+
+        // 4. Fetch and set stock
+        Map<UUID, Integer> stockMap = fetchStock(List.of(updatedProduct.getId()));
+        productResponse.setQuantity(stockMap.getOrDefault(updatedProduct.getId(), 0));
+
+        // 5. Enrich with brand and category names
+        enrichProductDetails(productResponse, updatedProduct);
+
+        log.info("Finish: Updated status of Product ID: {} to {} successfully!", id, status);
+        return ResponseModel.success(productResponse);
+    }
+
+    // Helper
     private Map<UUID, Integer> fetchStock(List<UUID> ids) {
         try {
 
@@ -341,7 +372,8 @@ public class ProductImplService implements ProductService {
             return (resp != null && resp.getData() != null) ? resp.getData().stream()
 
                     // nap to get key product and value available
-                    .collect(Collectors.toMap(InventoryResponse::getProductId, InventoryResponse::getAvailableStock, (a, b) -> a))
+                    .collect(Collectors.toMap(InventoryResponse::getProductId, InventoryResponse::getAvailableStock,
+                            (a, b) -> a))
                     : Collections.emptyMap();
         } catch (Exception e) {
 
@@ -352,7 +384,8 @@ public class ProductImplService implements ProductService {
 
     // brand and category
     private void enrichProductDetails(ProductResponse response, ProductModel model) {
-        if (response == null || model == null) return;
+        if (response == null || model == null)
+            return;
 
         // Use the ID from the MODEL, not the response
         if (model.getCategoryId() != null) {

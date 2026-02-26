@@ -1,6 +1,5 @@
-package com.microservices.product_service.application.request;
+package com.microservices.product_service.domain.filter;
 
-import com.microservices.product_service.infrastructure.repository.entity.CategoryEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,10 +7,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class ProductSearchRequest {
+public class ProductFilterRequest {
 	private String id;
 	private String name;
 	private String category;
 	private String brand;
+	private String minPrice;
+	private String maxPrice;
 }
-

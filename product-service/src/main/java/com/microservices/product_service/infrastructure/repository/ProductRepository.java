@@ -1,6 +1,6 @@
 package com.microservices.product_service.infrastructure.repository;
 
-import com.microservices.product_service.domain.model.ProductModel;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

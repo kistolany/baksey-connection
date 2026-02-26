@@ -1,10 +1,10 @@
-package com.microservices.product_service.application.response;
+package com.microservices.product_service.domain.filter;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import com.microservices.product_service.application.request.ProductSearchRequest;
+
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.domain.Specification;
@@ -13,17 +13,24 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import lombok.AllArgsConstructor;
 
-public record ProductSpecification(ProductSearchRequest productFilter) implements Specification<ProductEntity> {
+@AllArgsConstructor
+public class ProductFilterSpecification implements Specification<ProductEntity> {
+
+    private final ProductFilterRequest productFilter;
+
     @Override
-    public @Nullable Predicate toPredicate(@NonNull Root<ProductEntity> product, @NonNull CriteriaQuery<?> query, @NonNull CriteriaBuilder cb) {
+    public @Nullable Predicate toPredicate(@NonNull Root<ProductEntity> product, @NonNull CriteriaQuery<?> query,
+            @NonNull CriteriaBuilder cb) {
 
         // declare writable for list predicate
         List<Predicate> predicates = new ArrayList<Predicate>();
 
         // filter by product name
         if (Objects.nonNull(productFilter.getName())) {
-            Predicate predicate = cb.like(cb.lower(product.get("name")), "%" + productFilter.getName().toLowerCase() + "%");
+            Predicate predicate = cb.like(cb.lower(product.get("name")),
+                    "%" + productFilter.getName().toLowerCase() + "%");
             predicates.add(predicate);
         }
 
@@ -36,14 +43,28 @@ public record ProductSpecification(ProductSearchRequest productFilter) implement
         if (productFilter.getCategory() != null && !productFilter.getCategory().isBlank()) {
 
             // We JOIN to the category table and use LOWER() on the categoryName column
-            predicates.add(cb.equal(cb.lower(product.join("category").get("name")), productFilter.getCategory().toLowerCase()));
+            predicates.add(cb.equal(cb.lower(product.join("category").get("name")),
+                    productFilter.getCategory().toLowerCase()));
         }
+
         // Filter by Brand Name (String)
         if (productFilter.getBrand() != null && !productFilter.getBrand().isBlank()) {
 
             // We JOIN to the brand table and use LOWER() on the brandName column
-            predicates.add(cb.equal(cb.lower(product.join("brand").get("name")), productFilter.getBrand().toLowerCase()));
+            predicates
+                    .add(cb.equal(cb.lower(product.join("brand").get("name")), productFilter.getBrand().toLowerCase()));
         }
+
+        // Filter by Min Price (BigDecimal)
+        if (productFilter.getMinPrice() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(product.get("salePrice"), productFilter.getMinPrice()));
+        }
+
+        // Filter by Max Price (BigDecimal)
+        if (productFilter.getMaxPrice() != null) {
+            predicates.add(cb.lessThanOrEqualTo(product.get("salePrice"), productFilter.getMaxPrice()));
+        }
+
         return cb.and(predicates.toArray(Predicate[]::new));
     }
 

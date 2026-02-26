@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import com.microservices.common_service.domain.ResponseModel;
 import com.microservices.product_service.application.request.ProductRequest;
 import com.microservices.product_service.application.response.ProductResponse;
+import com.microservices.product_service.domain.constant.Constants.ProductStatus;
+import com.microservices.product_service.domain.filter.ProductFilterRequest;
 import com.microservices.product_service.domain.service.ProductService;
-import com.microservices.product_service.application.request.ProductSearchRequest;
+
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,8 +27,7 @@ public class ProductController {
 
     @PostMapping
     public ResponseModel<ProductResponse> createProduct(
-            @RequestBody @Valid ProductRequest request
-    ) {
+            @RequestBody @Valid ProductRequest request) {
         log.info("POST: Create product with body");
         return productService.create(request);
     }
@@ -37,20 +38,27 @@ public class ProductController {
         return productService.getById(id);
     }
 
-    @PutMapping(
-            value = "/{id}",
-            produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseModel<ProductResponse> updateProduct(@Valid  @RequestBody ProductRequest request, @PathVariable String id) {
+    @PutMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseModel<ProductResponse> updateProduct(@Valid @RequestBody ProductRequest request,
+            @PathVariable String id) {
         log.info("PUT: Update product with id : {}", id);
         return productService.update(request, id);
     }
 
+    @PatchMapping(value = "/{id}/status", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseModel<ProductResponse> updateProductStatus(
+            @PathVariable String id,
+            @RequestParam ProductStatus status) {
+        log.info("PATCH: Update status of product {} to {}", id, status);
+        return productService.updateStatus(id, status);
+    }
+
     @GetMapping
     public ResponseModel<PageResponse<ProductResponse>> getAllProduct(
-            @ModelAttribute ProductSearchRequest searchRequest, PageRequest pageRequest) {
+            @ModelAttribute ProductFilterRequest searchRequest, PageRequest pageRequest) {
         // Log the incoming search parameters and request body
-        log.info("GET: Search products with params: {} and request: {}", pageRequest, CommonUtils.toJsonString(searchRequest));
+        log.info("GET: Search products with params: {} and request: {}", pageRequest,
+                CommonUtils.toJsonString(searchRequest));
         return productService.searchProducts(searchRequest, pageRequest);
     }
 
@@ -60,15 +68,13 @@ public class ProductController {
         return productService.listByProductIds(ids);
     }
 
-    @PostMapping(
-            value = "/{productId}/image",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseModel<String> uploadImage(
+    @PostMapping(value = "/{productId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseModel<List<String>> uploadImage(
             @PathVariable UUID productId,
-            @RequestParam("file") MultipartFile file) {
+            @RequestPart("files") List<MultipartFile> files) {
 
         log.info("POST: Request to upload image for product: {}", productId);
-        return productService.uploadImage(productId, file);
+        return productService.uploadImage(productId, files);
     }
 
     @GetMapping(value = "/category/{id}", produces = MediaType.APPLICATION_JSON_VALUE)

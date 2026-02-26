@@ -1,9 +1,7 @@
 package com.microservices.product_service.domain.service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-
 import com.microservices.common_service.domain.PageRequest;
 import com.microservices.common_service.domain.PageResponse;
 import com.microservices.common_service.domain.ResponseModel;
@@ -23,6 +21,6 @@ public interface CategoryService {
 
     ResponseModel<List<CategoryResponse>> getAllByBrandUuid(String BrandUuid);
 
-    ResponseModel<String> uploadImage(UUID categoryId, MultipartFile file);
+    ResponseModel<List<String>> uploadImage(UUID categoryId, List<MultipartFile> file);
 
 }

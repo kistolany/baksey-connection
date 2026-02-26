@@ -31,7 +31,8 @@ public class InventoryController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseModel<PageResponse<InventoryResponse>> getAll(@Valid @ModelAttribute FilterDTO request, PageRequest pageRequest) {
+    public ResponseModel<PageResponse<InventoryResponse>> getAll(@Valid @ModelAttribute FilterDTO request,
+            PageRequest pageRequest) {
         log.info("GET: Getting all inventory body");
         return inventoryService.getAll(request, pageRequest);
     }

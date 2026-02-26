@@ -5,7 +5,8 @@ import lombok.Data;
 
 @Data
 public class BrandRequest {
-	@NotBlank(message = "brandName cannot be blank")
+    @NotBlank(message = "brandName cannot be blank")
     private String name;
+
     private String imageUrl;
 }

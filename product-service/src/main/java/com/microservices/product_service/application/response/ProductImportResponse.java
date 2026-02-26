@@ -1,11 +1,11 @@
 package com.microservices.product_service.application.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,13 +13,13 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CategoryResponse {
-    private UUID uuid;
-    private String name;
-    private String imageUrl;
-    private UUID brandId;
-    @JsonProperty("creationAt")
+public class ProductImportResponse {
+    private UUID id;
+    private UUID productId;
+    private Integer quantity;
+    private BigDecimal pricePerUnit;
+    private String currency;
+    private String description;
     private LocalDateTime createdAt;
-    @JsonProperty("updatedAt")
     private LocalDateTime lastUpdatedAt;
 }

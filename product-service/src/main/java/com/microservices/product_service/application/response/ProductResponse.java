@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.microservices.product_service.domain.constant.Constants.ProductStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,6 +27,7 @@ public class ProductResponse {
     private List<String> images;
 
     private Integer quantity;
+    private ProductStatus status;
     private CategoryResponse category;
     private BrandResponse brand;
 

@@ -40,21 +40,18 @@ public class BrandController {
     }
 
     @PutMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseModel<BrandResponse> updateBrand(@Valid @RequestBody BrandRequest brandRequest, @PathVariable String id) {
+    public ResponseModel<BrandResponse> updateBrand(@Valid @RequestBody BrandRequest brandRequest,
+            @PathVariable String id) {
         log.info("PUT: Update brand with id {} ", id);
         return brandService.update(brandRequest, id);
     }
 
-    @PostMapping(
-            value = "/{brandId}/image",
-            produces = MediaType.APPLICATION_JSON_VALUE,
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-
-    public ResponseModel<String> uploadBrandImage(
+    @PostMapping(value = "/{brandId}/image", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseModel<List<String>> uploadBrandImage(
             @PathVariable UUID brandId,
-            @RequestParam("file") MultipartFile file) {
+            @RequestPart("files") List<MultipartFile> files) {
         log.info("PUT: Upload image to brand with id {} ", brandId);
-        return brandService.uploadImage(brandId, file);
+        return brandService.uploadImage(brandId, files);
     }
 
 }

@@ -1,12 +1,10 @@
 package com.microservices.product_service.infrastructure.repository.impl;
 
-import com.microservices.common_service.domain.PageResponse;
 import com.microservices.product_service.domain.model.CategoryModel;
 import com.microservices.product_service.domain.db_repo.CategoryDomainRepo;
 import com.microservices.product_service.infrastructure.repository.CategoryRepository;
 import com.microservices.product_service.infrastructure.repository.entity.BrandEntity;
 import com.microservices.product_service.infrastructure.repository.entity.CategoryEntity;
-import com.microservices.product_service.infrastructure.repository.entity.ProductEntity;
 import com.microservices.product_service.infrastructure.repository.repoMapper.CategoryRepoMapper;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;

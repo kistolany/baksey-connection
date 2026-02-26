@@ -42,7 +42,8 @@ public class CategoryController {
     }
 
     @PutMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseModel<CategoryResponse> updateCategory(@Valid @RequestBody CategoryRequest brandRequest, @PathVariable String id) {
+    public ResponseModel<CategoryResponse> updateCategory(@Valid @RequestBody CategoryRequest brandRequest,
+            @PathVariable String id) {
         log.info("PUT: Update category with id {} ", id);
         return categoryService.update(brandRequest, id);
     }
@@ -53,14 +54,12 @@ public class CategoryController {
         return categoryService.getAllByBrandUuid(id);
     }
 
-    @PostMapping(
-            value = "/{categoryId}/image",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseModel<String> upload(
+    @PostMapping(value = "/{categoryId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseModel<List<String>> upload(
             @PathVariable UUID categoryId,
-            @RequestParam("file") MultipartFile file) {
+            @RequestPart("files") List<MultipartFile> files) {
         log.info("POST: Upload image category by id {} ", categoryId);
-        return categoryService.uploadImage(categoryId, file);
+        return categoryService.uploadImage(categoryId, files);
     }
 
 }
